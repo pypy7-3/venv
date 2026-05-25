@@ -70,6 +70,7 @@ plt.axis("off")
 plt.show()
 
 # 4 connectivity
+# 4 neighbours
 import numpy as np
 from collections import deque
 
@@ -113,6 +114,7 @@ end = (3,3)
 print(path_4_connectivity(img, start, end))
 
 # 8 connectivity
+# 8 neighbours
 import numpy as np
 from collections import deque
 
@@ -159,6 +161,7 @@ end = (3,3)
 print(path_8_connectivity(img, start, end))
 
 # m connectivity
+# m neighbours
 import numpy as np
 from collections import deque
 
@@ -1063,6 +1066,39 @@ plt.axis("off")
 
 plt.tight_layout()
 plt.show()
+
+# Week 4 (All edge Detection methods)
+
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+
+img = cv2.imread("lenna.png", 0)
+# Sobel Operator
+sobelx = cv2.Sobel(img, cv2.CV_64F, 1, 0)
+sobely = cv2.Sobel(img, cv2.CV_64F, 0, 1)
+result = sobelx + sobely
+plt.imshow(result)
+
+# Canny 
+result1 = cv2.Canny(img, 100, 200)
+plt.imshow(result1)
+
+# Roberts
+kernelx = np.array([[1, 0], [0, -1]])
+kernely = np.array([[0, 1], [-1, 0]])
+robertx = cv2.filter2D(img, -1, kernelx)
+roberty = cv2.filter2D(img, -1, kernely)
+result = robertx + roberty
+plt.imshow(result)
+
+# Prewitt Operator:
+kernelx = np.array([[1,1,1],[0,0,0],[-1,-1,-1]])
+kernely = np.array([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]])
+prewitx = cv2.filter2D(img, -1, kernelx)
+prewity = cv2.filter2D(img, -1, kernely)
+result = prewitx + prewity
+plt.imshow(result)
 
 ### Week 5
 # Global vs Adaptive Threshold

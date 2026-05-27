@@ -1016,91 +1016,50 @@ print(df)
 # Hidden Markov Model (HMM)
 import numpy as np
 
-def forward_algorithm(pi, A, B, observations, state_labels=None, obs_labels=None, verbose=True):
-    pi = np.array(pi, dtype=float)
-    A  = np.array(A,  dtype=float)
-    B  = np.array(B,  dtype=float)
+def forward_algorithm(pi, A, B, observations, state_labels, obs_labels):
+    pi = np.array(pi)
+    A  = np.array(A)
+    B  = np.array(B)
     T  = len(observations)
     N  = len(pi)
 
-    if state_labels is None:
-        state_labels = [f"s{i}" for i in range(N)]
-    if obs_labels is None:
-        obs_labels = [f"o{k}" for k in range(B.shape[1])]
-
     alpha = np.zeros((T, N))
 
-    if verbose:
-        print("=" * 60)
-        print("  Hidden Markov Model — Forward Algorithm")
-        print("=" * 60)
-        obs_seq_str = ", ".join(obs_labels[o] for o in observations)
-        print(f"\nObservation sequence O = ({obs_seq_str})")
-        print(f"T = {T},  N = {N} states\n")
-
+    # Initialization
     o1 = observations[0]
     alpha[0] = pi * B[:, o1]
 
-    if verbose:
-        print("── Step 1 Initialization ──────────────────────────────")
-        print(f"   Observation at t=1 : {obs_labels[o1]}\n")
-        for i in range(N):
-            print(f"   α₁({state_labels[i]}) = π({state_labels[i]}) × B({state_labels[i]},{obs_labels[o1]})"
-                  f"  =  {pi[i]:.4f} × {B[i, o1]:.4f}  =  {alpha[0, i]:.6f}")
-
-    if verbose:
-        print()
+    # Induction
     for t in range(1, T):
         ot = observations[t]
-        if verbose:
-            print(f"── Step 2 Induction  t={t+1}  (obs={obs_labels[ot]}) ──────────────")
         for j in range(N):
             summation = sum(alpha[t-1, i] * A[i, j] for i in range(N))
             alpha[t, j] = summation * B[j, ot]
-            if verbose:
-                terms = " + ".join(
-                    f"α{t}({state_labels[i]})·a({state_labels[i]}→{state_labels[j]})"
-                    for i in range(N)
-                )
-                print(f"   α{t+1}({state_labels[j]}) = [{terms}] × B({state_labels[j]},{obs_labels[ot]})")
-                term_vals = " + ".join(
-                    f"{alpha[t-1,i]:.6f}×{A[i,j]:.4f}" for i in range(N)
-                )
-                print(f"             = [{term_vals}] × {B[j, ot]:.4f}")
-                print(f"             = {summation:.8f} × {B[j, ot]:.4f}  =  {alpha[t, j]:.8f}")
-        if verbose:
-            print()
 
+    # Termination
     prob = alpha[T-1].sum()
 
-    if verbose:
-        print("── Step 3 Termination ─────────────────────────────────")
-        terms = " + ".join(f"α{T}({state_labels[i]})={alpha[T-1,i]:.8f}" for i in range(N))
-        print(f"   P(O|λ) = {terms}")
-        print(f"\n   ✔  P(O|λ) = {prob:.8e}  ≈  {prob:.6f}")
-        print("=" * 60)
-
-    return prob, alpha
+    return prob
 
 
-if __name__ == "__main__":
-    state_labels = ["S", "C", "R"]
-    obs_labels = ["W", "Sh", "Cl"]
-    pi = [0.5, 0.3, 0.2]
-    A = [
-        [0.6, 0.3, 0.1],
-        [0.4, 0.4, 0.2],
-        [0.3, 0.3, 0.4],
-    ]
-    B = [
-        [0.6, 0.3, 0.1],
-        [0.3, 0.4, 0.3],
-        [0.1, 0.3, 0.6],
-    ]
-    observations = [1, 1, 0]   
-    prob, alpha = forward_algorithm(
-        pi, A, B, observations,
-        state_labels=state_labels,
-        obs_labels=obs_labels,
-        verbose=True,
-    )
+state_labels = ["S", "C", "R"]
+obs_labels = ["W", "Sh", "Cl"]
+pi = [0.5, 0.3, 0.2]
+A = [
+    [0.6, 0.3, 0.1],
+    [0.4, 0.4, 0.2],
+    [0.3, 0.3, 0.4],
+]
+B = [
+    [0.6, 0.3, 0.1],
+    [0.3, 0.4, 0.3],
+    [0.1, 0.3, 0.6],
+]
+observations = [1, 1, 0]
+
+prob = forward_algorithm(
+    pi, A, B, observations,
+    state_labels,
+    obs_labels
+)
+print(prob)

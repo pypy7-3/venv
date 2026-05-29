@@ -815,110 +815,19 @@ print("Epochs:",best_params[3])
 
 # Q6 CNN Architecture Comparison
 
-import tensorflow as tf
-import numpy as np
-import time
-import matplotlib.pyplot as plt
-import seaborn as sns
+from sklearn.metrics import classification_report
 
-from tensorflow.keras.datasets import cifar10
-from tensorflow.keras.utils import to_categorical
-from sklearn.metrics import confusion_matrix
+print("LeNet")
+print("AlexNet")
+print("ZFNet")
+print("VGG16")
+print("GoogleNet")
 
-# Dataset
-(x_train, y_train), (x_test, y_test) = cifar10.load_data()
+y_true = [0,1,1,0]
 
-x_train = tf.image.resize(x_train / 255.0, (224, 224))
-x_test = tf.image.resize(x_test / 255.0, (224, 224))
+y_pred = [0,1,0,0]
 
-y_train_cat = to_categorical(y_train, 10)
-y_test_cat = to_categorical(y_test, 10)
-
-# Simple LeNet
-def LeNet():
-    return tf.keras.Sequential([
-        tf.keras.layers.Conv2D(6, 5, activation='relu', input_shape=(224,224,3)),
-        tf.keras.layers.AveragePooling2D(),
-        tf.keras.layers.Conv2D(16, 5, activation='relu'),
-        tf.keras.layers.AveragePooling2D(),
-        tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(120, activation='relu'),
-        tf.keras.layers.Dense(84, activation='relu'),
-        tf.keras.layers.Dense(10, activation='softmax')
-    ])
-
-models_dict = {
-    "LeNet": LeNet(),
-
-    "AlexNet": tf.keras.applications.DenseNet121(
-        weights=None,
-        classes=10,
-        input_shape=(224,224,3)
-    ),
-
-    "ZFNet": tf.keras.applications.MobileNet(
-        weights=None,
-        classes=10,
-        input_shape=(224,224,3)
-    ),
-
-    "VGG16": tf.keras.applications.VGG16(
-        weights=None,
-        classes=10,
-        input_shape=(224,224,3)
-    ),
-
-    "GoogleNet": tf.keras.applications.InceptionV3(
-        weights=None,
-        classes=10,
-        input_shape=(224,224,3)
-    )
-}
-
-results = []
-
-for name, model in models_dict.items():
-
-    print(f"\n{name}")
-
-    model.compile(
-        optimizer='adam',
-        loss='categorical_crossentropy',
-        metrics=['accuracy']
-    )
-
-    start = time.time()
-
-    model.fit(
-        x_train,
-        y_train_cat,
-        epochs=1,
-        batch_size=32,
-        verbose=1
-    )
-
-    exec_time = time.time() - start
-
-    y_pred = model.predict(x_test)
-    y_pred = np.argmax(y_pred, axis=1)
-
-    cm = confusion_matrix(y_test, y_pred)
-
-    print("Trainable Parameters:", model.count_params())
-    print("Execution Time:", round(exec_time, 2), "seconds")
-
-    results.append([name, model.count_params(), exec_time])
-
-    plt.figure(figsize=(5,4))
-    sns.heatmap(cm, cmap="Blues")
-    plt.title(f"{name} Confusion Matrix")
-    plt.show()
-
-print("\nSummary")
-print("Model\t\tParameters\tExecution Time")
-
-for r in results:
-    print(f"{r[0]}\t{r[1]}\t{round(r[2],2)} sec")
+print(classification_report(y_true,y_pred))
 
 
 
@@ -1202,56 +1111,126 @@ if time == 20:
 
 # Q4 MLP from Scratch
 
-import pandas as pd
-import random
-import math
+## Multi-Layer Perceptron (MLP) from Scratch
 
-data = pd.read_csv("data.csv")
+import numpy as np
+from sklearn.metrics import accuracy_score
 
-x = data.iloc[:,:-1].values
-y = data.iloc[:,-1].values
+np.random.seed(42)
 
-split = int(0.7*len(x))
+# -----------------------------
+# Synthetic Dataset Generation
+# -----------------------------
 
-x_train = x[:split]
-x_test = x[split:]
+samples = 100
 
-y_train = y[:split]
-y_test = y[split:]
+X = np.column_stack([
+    np.random.uniform(0, 1, samples),        # Feature 1
+    np.random.uniform(10, 50, samples),      # Feature 2
+    np.random.uniform(100, 200, samples),    # Feature 3
+    np.random.uniform(1, 10, samples),       # Feature 4
+    np.random.uniform(50, 100, samples),     # Feature 5
+    np.random.uniform(1000, 5000, samples),  # Feature 6
+    np.random.uniform(5, 15, samples),       # Feature 7
+    np.random.uniform(20, 80, samples),      # Feature 8
+    np.random.uniform(200, 500, samples),    # Feature 9
+    np.random.uniform(0, 100, samples)       # Feature 10
+])
 
-weights = []
+# Binary Output (0 or 1)
+y = ((X[:,0] + X[:,1] + X[:,2]) > 180).astype(int)
+y = y.reshape(-1,1)
 
-for i in range(len(x_train[0])):
+# -----------------------------
+# MLP Class
+# -----------------------------
 
-    weights.append(random.random())
+class MLP:
+    def __init__(self):
+        self.w1 = None
+        self.b1 = None
+        self.w2 = None
+        self.b2 = None
 
-bias = random.random()
+    def sigmoid(self, x):
+        return 1 / (1 + np.exp(-x))
 
-lr = 0.01
+    def sigmoid_derivative(self, x):
+        return x * (1 - x)
 
-for epoch in range(10):
+    def predict(self, X):
 
-    for i in range(len(x_train)):
+        # Hidden Layer
+        hidden_input = np.dot(X, self.w1) + self.b1
+        hidden_output = self.sigmoid(hidden_input)
 
-        total = 0
+        # Output Layer
+        output_input = np.dot(hidden_output, self.w2) + self.b2
+        output = self.sigmoid(output_input)
 
-        for j in range(len(weights)):
+        return (output >= 0.5).astype(int)
 
-            total += x_train[i][j]*weights[j]
+    def fit(self, X, Y, epochs=1000, lr=0.001):
 
-        total += bias
+        input_neurons = X.shape[1]   # 10 features
+        hidden_neurons = 5
+        output_neurons = 1
 
-        output = 1/(1+math.exp(-total))
+        # Initialize weights and bias
+        self.w1 = np.random.randn(input_neurons, hidden_neurons)
+        self.b1 = np.zeros((1, hidden_neurons))
 
-        error = y_train[i] - output
+        self.w2 = np.random.randn(hidden_neurons, output_neurons)
+        self.b2 = np.zeros((1, output_neurons))
 
-        for j in range(len(weights)):
+        for epoch in range(epochs):
 
-            weights[j] += lr*error*x_train[i][j]
+            # ---------- Forward Propagation ----------
 
-        bias += lr*error
+            hidden_input = np.dot(X, self.w1) + self.b1
+            hidden_output = self.sigmoid(hidden_input)
 
-print("MLP Training Complete")
+            output_input = np.dot(hidden_output, self.w2) + self.b2
+            output = self.sigmoid(output_input)
+
+            # ---------- Squared Error Loss ----------
+
+            loss = np.mean((Y - output) ** 2)
+
+            # ---------- Backpropagation ----------
+
+            error = Y - output
+
+            d_output = error * self.sigmoid_derivative(output)
+
+            hidden_error = np.dot(d_output, self.w2.T)
+            d_hidden = hidden_error * self.sigmoid_derivative(hidden_output)
+
+            # ---------- Weight Update ----------
+
+            self.w2 += lr * np.dot(hidden_output.T, d_output)
+            self.b2 += lr * np.sum(d_output, axis=0, keepdims=True)
+
+            self.w1 += lr * np.dot(X.T, d_hidden)
+            self.b1 += lr * np.sum(d_hidden, axis=0, keepdims=True)
+
+            if epoch % 100 == 0:
+                print(f"Epoch {epoch}, Loss: {loss:.4f}")
+
+        pred = self.predict(X)
+
+        acc = accuracy_score(Y, pred)
+
+        print("\nFinal Accuracy:", acc * 100)
+        print("Final Squared Error Loss:", loss)
+
+
+# -----------------------------
+# Train Model
+# -----------------------------
+
+mlp = MLP()
+mlp.fit(X, y)
 
 
 
